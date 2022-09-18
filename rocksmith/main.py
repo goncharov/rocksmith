@@ -57,13 +57,15 @@ def _convert(data, mac2pc):
     if mac2pc:
         data = data.replace("audio/mac", "audio/windows")
         data = data.replace("bin/macos", "bin/generic")
+        data = data.replace("macos", "dx9")
     else:
         data = data.replace("audio/windows", "audio/mac")
         data = data.replace("bin/generic", "bin/macos")
+        data = data.replace("dx9", "macos")
     return data
 
 
-def convert(filename):
+def convert(filename, appid):
     if filename.endswith("_m.psarc"):
         outname = filename.replace("_m.psarc", "_p.psarc")
         mac2pc = True
@@ -80,11 +82,10 @@ def convert(filename):
     new_content = {}
     for path, data in content.items():
         if path.endswith("aggregategraph.nt"):
-            data = _convert(data.decode(), mac2pc)
-            if mac2pc:
-                data = data.replace("macos", "dx9").encode("utf8")
-            else:
-                data = data.replace("dx9", "macos").encode("utf8")
+            data = _convert(data.decode(), mac2pc).encode("utf8")
+
+        if path == "appid.appid" and appid:
+          data = appid.encode("utf8")
 
         new_content[_convert(path, mac2pc)] = data
 
@@ -118,6 +119,12 @@ def main():
     )
 
     parser.add_argument(
+        "--appid",
+        help="change appid of PSARC archive",
+        metavar="N",
+    )
+
+    parser.add_argument(
         "--print-sng",
         help="print a Rocksmith sng file as a JSON string",
         metavar=("FILE",),
@@ -129,7 +136,7 @@ def main():
     elif args.pack:
         pack(args.pack, not args.no_crypto)
     elif args.convert:
-        convert(args.convert)
+        convert(args.convert, args.appid)
     elif args.print_sng:
         print_sng(args.print_sng)
     else:
